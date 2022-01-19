@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     }
     int num_threads = std::stoi(argv[1]);
 
-    long num_vectors_total = (long) 5 * 1000 * 1000 * 1000; 
+    long num_vectors_total = (long) 1 * 1000 * 1000 * 1000; 
     long num_vectors_per_thread = num_vectors_total / num_threads; 
 
     // multiple threads manipulate on different pieces of memory
