@@ -20,7 +20,7 @@ using milli = std::chrono::milliseconds;
 
 
 struct Thread_info {
-    size_t num_vectors;
+    long num_vectors;
     uint8_t* codes;
     float* distance_LUT; // 16 x 256
     float* result;
@@ -36,7 +36,7 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
     struct Thread_info* t_info = (struct Thread_info*) vargp;
 
 
-    size_t num_vectors = t_info -> num_vectors;
+    long num_vectors = t_info -> num_vectors;
     uint8_t* codes = t_info -> codes;
     float* distance_LUT = t_info -> distance_LUT; // 16 x 256
     float* result = t_info -> result;
@@ -46,7 +46,7 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
 
     uint8_t tmp_codes[16];
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         uint8_t* code_ptr = codes + j * CODE_SIZE;
   
         tmp_codes[0] = tab_ptr[code_ptr[0]];
@@ -72,7 +72,7 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
         tmp_codes[8] + tmp_codes[9] + tmp_codes[10] + tmp_codes[11] +
         tmp_codes[12] + tmp_codes[13] + tmp_codes[14] + tmp_codes[15];
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         result[j] = sum_dis;
     }
 
@@ -88,7 +88,7 @@ void* thread_func_unroll_scan_no_add(void* vargp) {
     struct Thread_info* t_info = (struct Thread_info*) vargp;
 
 
-    size_t num_vectors = t_info -> num_vectors;
+    long num_vectors = t_info -> num_vectors;
     uint8_t* codes = t_info -> codes;
     float* distance_LUT = t_info -> distance_LUT; // 16 x 256
     float* result = t_info -> result;
@@ -113,7 +113,7 @@ void* thread_func_unroll_scan_no_add(void* vargp) {
     float* tab_ptr_14 = distance_LUT + 14 * 256;
     float* tab_ptr_15 = distance_LUT + 15 * 256;
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         uint8_t* code_ptr = codes + j * CODE_SIZE;
   
         dis[0] = tab_ptr_0[code_ptr[0]];
@@ -139,7 +139,7 @@ void* thread_func_unroll_scan_no_add(void* vargp) {
         dis[8] + dis[9] + dis[10] + dis[11] +
         dis[12] + dis[13] + dis[14] + dis[15];
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         result[j] = sum_dis;
     }
 
@@ -154,7 +154,7 @@ void* thread_func_unroll_scan(void* vargp) {
     struct Thread_info* t_info = (struct Thread_info*) vargp;
 
 
-    size_t num_vectors = t_info -> num_vectors;
+    long num_vectors = t_info -> num_vectors;
     uint8_t* codes = t_info -> codes;
     float* distance_LUT = t_info -> distance_LUT; // 16 x 256
     float* result = t_info -> result;
@@ -180,7 +180,7 @@ void* thread_func_unroll_scan(void* vargp) {
     float* tab_ptr_14 = distance_LUT + 14 * 256;
     float* tab_ptr_15 = distance_LUT + 15 * 256;
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         uint8_t* code_ptr = codes + j * CODE_SIZE;
   
         dis[0] = tab_ptr_0[code_ptr[0]];
@@ -238,18 +238,18 @@ void* thread_func_faiss_scan(void* vargp) {
     struct Thread_info* t_info = (struct Thread_info*) vargp;
 
 
-    size_t num_vectors = t_info -> num_vectors;
+    long num_vectors = t_info -> num_vectors;
     uint8_t* codes = t_info -> codes;
     float* distance_LUT = t_info -> distance_LUT; // 16 x 256
     float* result = t_info -> result;
 
-    for (size_t j = 0; j < num_vectors; j++) {
+    for (long j = 0; j < num_vectors; j++) {
         uint8_t* cur_codes = codes;
         codes += 8;
         float dis = 0; 
         const float* tab_ptr = distance_LUT;
 
-        for (size_t m = 0; m < CODE_SIZE; m++) {
+        for (long m = 0; m < CODE_SIZE; m++) {
             dis += tab_ptr[(uint64_t)(*cur_codes++)];
             tab_ptr += 256;
         }
@@ -269,8 +269,8 @@ int main(int argc, char *argv[]) {
     }
     int num_threads = std::stoi(argv[1]);
 
-    size_t num_vectors_total = 1000 * 1000 * 1000; 
-    size_t num_vectors_per_thread = num_vectors_total / num_threads; 
+    long num_vectors_total = (long) 5 * 1000 * 1000 * 1000; 
+    long num_vectors_per_thread = num_vectors_total / num_threads; 
 
     // multiple threads manipulate on different pieces of memory
     uint8_t** codes = new uint8_t*[num_threads]; 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
         duration = std::chrono::duration_cast<milli>(
              std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
         total_time_per_thread = 0;
-        for (int i = 0; i < num_threads; i++) total_time_per_thread += time_per_thread[i];
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
         ave_time_per_thread = total_time_per_thread / num_threads;
         std::cout << "unroll read codes: size = " << num_vectors_total * CODE_SIZE << 
             " bytes\ntime (all sync)="  << duration << " seconds\n" 
@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
         duration = std::chrono::duration_cast<milli>(
              std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
         total_time_per_thread = 0;
-        for (int i = 0; i < num_threads; i++) total_time_per_thread += time_per_thread[i];
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
         ave_time_per_thread = total_time_per_thread / num_threads;
         std::cout << "unroll scan (no add): size = " << num_vectors_total * CODE_SIZE << 
             " bytes\ntime (all sync)="  << duration << " seconds\n" 
@@ -372,7 +372,7 @@ int main(int argc, char *argv[]) {
         duration = std::chrono::duration_cast<milli>(
              std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
         total_time_per_thread = 0;
-        for (int i = 0; i < num_threads; i++) total_time_per_thread += time_per_thread[i];
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
         ave_time_per_thread = total_time_per_thread / num_threads;
         std::cout << "unroll scan: size = " << num_vectors_total * CODE_SIZE << 
             " bytes\ntime (all sync)="  << duration << " seconds\n" 
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
         duration = std::chrono::duration_cast<milli>(
              std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
         total_time_per_thread = 0;
-        for (int i = 0; i < num_threads; i++) total_time_per_thread += time_per_thread[i];
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
         ave_time_per_thread = total_time_per_thread / num_threads;
         std::cout << "fasiss scan: size = " << num_vectors_total * CODE_SIZE << 
             " bytes\ntime (all sync)="  << duration << " seconds\n" 
