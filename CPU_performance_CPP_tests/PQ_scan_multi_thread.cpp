@@ -6,6 +6,7 @@
 #include <chrono>
 #include <stdint.h>
 #include <pthread.h> 
+#include <string.h>
 
 #include <sys/time.h>
 #define CODE_SIZE 16
@@ -254,8 +255,11 @@ int main(int argc, char *argv[]) {
     float** result = new float*[num_threads];
     for (int i = 0; i < num_threads; i++) {
         codes[i] = new uint8_t[num_vectors_per_thread * CODE_SIZE]; 
+        memset(codes[i], 0, num_vectors_per_thread * CODE_SIZE);
         distance_LUT[i] = new float[256 * CODE_SIZE];
+        memset(distance_LUT[i], 0, 256 * CODE_SIZE * sizeof(float));
         result[i] = new float[num_vectors_per_thread];
+        memset(result[i], 0, num_vectors_per_thread * sizeof(float));
     }
 
     pthread_t thread_obj[num_threads]; 
@@ -270,14 +274,14 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "Scanning " << num_vectors_total << " PQ codes (" << CODE_SIZE << " bytes per vec), " 
-        << ((float) num_vectors_total) * CODE_SIZE / 1e9 << " GB in total";
+        << ((float) num_vectors_total) * CODE_SIZE / 1e9 << " GB in total\n";
 
 
     auto tstart = std::chrono::high_resolution_clock::now();
     double duration = 0;
     for (int iter = 0; iter < 5; iter++) {
 
-        std::cout << "Iteration " << iter << ": " << std::endl;
+        std::cout << "\nIteration " << iter << ": " << std::endl;
 
         // thread_func_unroll_scan_read_codes
         tstart = std::chrono::high_resolution_clock::now();
