@@ -49,22 +49,22 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
     for (long j = 0; j < num_vectors; j++) {
         uint8_t* code_ptr = codes + j * CODE_SIZE;
   
-        tmp_codes[0] = tab_ptr[code_ptr[0]];
-        tmp_codes[1] = tab_ptr[code_ptr[1]];
-        tmp_codes[2] = tab_ptr[code_ptr[2]];
-        tmp_codes[3] = tab_ptr[code_ptr[3]];
-        tmp_codes[4] = tab_ptr[code_ptr[4]];
-        tmp_codes[5] = tab_ptr[code_ptr[5]];
-        tmp_codes[6] = tab_ptr[code_ptr[6]];
-        tmp_codes[7] = tab_ptr[code_ptr[7]];
-        tmp_codes[8] = tab_ptr[code_ptr[8]];
-        tmp_codes[9] = tab_ptr[code_ptr[9]];
-        tmp_codes[10] = tab_ptr[code_ptr[10]];
-        tmp_codes[11] = tab_ptr[code_ptr[11]];
-        tmp_codes[12] = tab_ptr[code_ptr[12]];
-        tmp_codes[13] = tab_ptr[code_ptr[13]];
-        tmp_codes[14] = tab_ptr[code_ptr[14]];
-        tmp_codes[15] = tab_ptr[code_ptr[15]];
+        tmp_codes[0] = code_ptr[0];
+        tmp_codes[1] = code_ptr[1];
+        tmp_codes[2] = code_ptr[2];
+        tmp_codes[3] = code_ptr[3];
+        tmp_codes[4] = code_ptr[4];
+        tmp_codes[5] = code_ptr[5];
+        tmp_codes[6] = code_ptr[6];
+        tmp_codes[7] = code_ptr[7];
+        tmp_codes[8] = code_ptr[8];
+        tmp_codes[9] = code_ptr[9];
+        tmp_codes[10] = code_ptr[10];
+        tmp_codes[11] = code_ptr[11];
+        tmp_codes[12] = code_ptr[12];
+        tmp_codes[13] = code_ptr[13];
+        tmp_codes[14] = code_ptr[14];
+        tmp_codes[15] = code_ptr[15];
     }
     float sum_dis = 
         tmp_codes[0] + tmp_codes[1] + tmp_codes[2] + tmp_codes[3] +
