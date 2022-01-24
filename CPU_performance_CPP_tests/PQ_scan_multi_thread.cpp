@@ -99,7 +99,7 @@ void* thread_func_unroll_scan_read_longer_codes(void* vargp) {
     uint8_t tmp_codes[LONG_CODE_SIZE];
     uint8_t codes_burst[LONG_CODE_SIZE];
 
-    for (long j = 0; j < num_vectors / (LONG_CODE_SIZE / CODE_SIZE); j++) {
+    for (long j = 0; j < num_vectors / LONG_CODE_SIZE; j++) {
         uint8_t* code_ptr = codes + j * LONG_CODE_SIZE;
         memcpy(codes_burst, code_ptr, LONG_CODE_SIZE); // this buffer: 1 + (N - 1) times
   
@@ -238,7 +238,7 @@ void* thread_func_unroll_scan_read_longer_codes_prefetch(void* vargp) {
     memcpy(codes_this, codes, LONG_CODE_SIZE);
     codes += LONG_CODE_SIZE; 
     // middle iterations: charge next buffer + compute + load this buffer from next buffer 
-    for (long j = 1; j < num_vectors / (LONG_CODE_SIZE / CODE_SIZE) -  1; j++) {
+    for (long j = 1; j < num_vectors / LONG_CODE_SIZE -  1; j++) {
         memcpy(codes_next, codes, LONG_CODE_SIZE); // next buffer: N - 1 times
         codes += LONG_CODE_SIZE;
   
