@@ -82,6 +82,45 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
 }
 
 
+
+void* thread_func_unroll_scan_read_longer_codes(void* vargp) {
+
+#define LONG_CODE_SIZE 1024
+
+    auto tstart = std::chrono::high_resolution_clock::now();
+
+    struct Thread_info* t_info = (struct Thread_info*) vargp;
+
+
+    long num_vectors = t_info -> num_vectors;
+    uint8_t* codes = t_info -> codes;
+    float* distance_LUT = t_info -> distance_LUT; // 16 x 256
+    float* result = t_info -> result;
+
+    uint8_t tmp_codes[LONG_CODE_SIZE];
+
+    for (long j = 0; j < num_vectors / (LONG_CODE_SIZE / CODE_SIZE); j++) {
+        uint8_t* code_ptr = codes + j * LONG_CODE_SIZE;
+  
+        for (int k = 0; k < LONG_CODE_SIZE; k++) {
+            tmp_codes[k] = code_ptr[k];
+        }
+    }
+    float sum_dis = 
+        tmp_codes[0] + tmp_codes[1] + tmp_codes[2] + tmp_codes[3] +
+        tmp_codes[4] + tmp_codes[5] + tmp_codes[6] + tmp_codes[7] +
+        tmp_codes[8] + tmp_codes[9] + tmp_codes[10] + tmp_codes[11] +
+        tmp_codes[12] + tmp_codes[13] + tmp_codes[14] + tmp_codes[15];
+
+    result[0] = sum_dis;
+    // for (long j = 0; j < num_vectors; j++) {
+    //     result[j] = sum_dis;
+    // }
+
+    t_info -> time_per_thread = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+}
+
 void* thread_func_unroll_scan_read_codes_prefetch(void* vargp) {
     
 
@@ -668,6 +707,30 @@ int main(int argc, char *argv[]) {
             << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
             << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
             << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
+
+        // thread_func_unroll_scan_read_longer_codes
+        tstart = std::chrono::high_resolution_clock::now();
+        std::cout << "Before Thread\n";
+        for (int i = 0; i < num_threads; i++) {
+            pthread_create(&thread_obj[i], NULL, thread_func_unroll_scan_read_longer_codes, (void*) &t_info[i]); 
+        }
+        for (int i = 0; i < num_threads; i++) {
+            pthread_join(thread_obj[i], NULL); 
+        }
+        std::cout << "After Thread\n"; 
+
+        duration = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+        total_time_per_thread = 0;
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
+        ave_time_per_thread = total_time_per_thread / num_threads;
+        std::cout << "unroll read longer codes: size = " << num_vectors_total * CODE_SIZE << 
+            "longer code size = " << LONG_CODE_SIZE << " bytes (instead of 16)" <<
+            " bytes\ntime (all sync)="  << duration << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
+            << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
+
 
         // thread_func_unroll_scan_read_codes_prefetch
         tstart = std::chrono::high_resolution_clock::now();
