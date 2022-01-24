@@ -816,6 +816,31 @@ int main(int argc, char *argv[]) {
             << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
             << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
 
+
+        // thread_func_unroll_scan_read_longer_codes_prefetch
+        tstart = std::chrono::high_resolution_clock::now();
+        std::cout << "Before Thread\n";
+        for (int i = 0; i < num_threads; i++) {
+            pthread_create(&thread_obj[i], NULL, thread_func_unroll_scan_read_longer_codes_prefetch, (void*) &t_info[i]); 
+        }
+        for (int i = 0; i < num_threads; i++) {
+            pthread_join(thread_obj[i], NULL); 
+        }
+        std::cout << "After Thread\n"; 
+
+        duration = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+        total_time_per_thread = 0;
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
+        ave_time_per_thread = total_time_per_thread / num_threads;
+        std::cout << "unroll read codes (prefetch): size = " << num_vectors_total * CODE_SIZE << 
+            "longer code size = " << LONG_CODE_SIZE << " bytes (instead of 16)" <<
+            " bytes\ntime (all sync)="  << duration << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
+            << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
+
+
         // thread_func_unroll_scan_no_add
         tstart = std::chrono::high_resolution_clock::now();
         std::cout << "Before Thread\n";
