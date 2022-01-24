@@ -423,6 +423,149 @@ void* thread_func_unroll_scan_prefetch(void* vargp) {
              std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
 }
 
+
+void* thread_func_unroll_scan_shift_prefetch(void* vargp) {
+    
+    auto tstart = std::chrono::high_resolution_clock::now();
+
+    struct Thread_info* t_info = (struct Thread_info*) vargp;
+
+
+    long num_vectors = t_info -> num_vectors;
+    uint8_t* codes = t_info -> codes;
+    float* distance_LUT = t_info -> distance_LUT; // 16 x 256
+    float* result = t_info -> result;
+
+
+    float dis[CODE_SIZE]; 
+    float* tab_ptr = distance_LUT;
+
+    float* tab_ptr_0 = distance_LUT + 0 * 256;
+    float* tab_ptr_1 = distance_LUT + 1 * 256;
+    float* tab_ptr_2 = distance_LUT + 2 * 256;
+    float* tab_ptr_3 = distance_LUT + 3 * 256;
+    float* tab_ptr_4 = distance_LUT + 4 * 256;
+    float* tab_ptr_5 = distance_LUT + 5 * 256;
+    float* tab_ptr_6 = distance_LUT + 6 * 256;
+    float* tab_ptr_7 = distance_LUT + 7 * 256;
+    float* tab_ptr_8 = distance_LUT + 8 * 256;
+    float* tab_ptr_9 = distance_LUT + 9 * 256;
+    float* tab_ptr_10 = distance_LUT + 10 * 256;
+    float* tab_ptr_11 = distance_LUT + 11 * 256;
+    float* tab_ptr_12 = distance_LUT + 12 * 256;
+    float* tab_ptr_13 = distance_LUT + 13 * 256;
+    float* tab_ptr_14 = distance_LUT + 14 * 256;
+    float* tab_ptr_15 = distance_LUT + 15 * 256;
+
+
+    // double buffering the codes to maximize bandwidth
+    // this buffer -> read N times
+    // next buffer -> read N - 1 times
+    // using uint64_t & bit mask to speedup
+    uint64_t codes_this[2];
+    uint64_t codes_next[2];
+
+    // first iteration: load this buffer from memory
+    memcpy(codes_this, codes, CODE_SIZE);
+    codes += CODE_SIZE; 
+    // middle iterations: charge next buffer + compute + load this buffer from next buffer 
+    for (long j = 0; j < num_vectors - 1; j++) {
+        memcpy(codes_next, codes, CODE_SIZE); // next buffer: N - 1 times
+        codes += CODE_SIZE;
+  
+        uint64_t code_0 = (codes_this[0] & 0x0000000F) >> (0 * 8);
+        uint64_t code_1 = (codes_this[0] & 0x000000F0) >> (1 * 8);
+        uint64_t code_2 = (codes_this[0] & 0x00000F00) >> (2 * 8);
+        uint64_t code_3 = (codes_this[0] & 0x0000F000) >> (3 * 8);
+        uint64_t code_4 = (codes_this[0] & 0x000F0000) >> (4 * 8);
+        uint64_t code_5 = (codes_this[0] & 0x00F00000) >> (5 * 8);
+        uint64_t code_6 = (codes_this[0] & 0x0F000000) >> (6 * 8);
+        uint64_t code_7 = (codes_this[0] & 0xF0000000) >> (7 * 8);
+
+        uint64_t code_8 = (codes_this[1] & 0x0000000F) >> (0 * 8);
+        uint64_t code_9 = (codes_this[1] & 0x000000F0) >> (1 * 8);
+        uint64_t code_10 = (codes_this[1] & 0x00000F00) >> (2 * 8);
+        uint64_t code_11 = (codes_this[1] & 0x0000F000) >> (3 * 8);
+        uint64_t code_12 = (codes_this[1] & 0x000F0000) >> (4 * 8);
+        uint64_t code_13 = (codes_this[1] & 0x00F00000) >> (5 * 8);
+        uint64_t code_14 = (codes_this[1] & 0x0F000000) >> (6 * 8);
+        uint64_t code_15 = (codes_this[1] & 0xF0000000) >> (7 * 8);
+
+        dis[0] = tab_ptr_0[code_0];
+        dis[1] = tab_ptr_1[code_1];
+        dis[2] = tab_ptr_2[code_2];
+        dis[3] = tab_ptr_3[code_3];
+        dis[4] = tab_ptr_4[code_4];
+        dis[5] = tab_ptr_5[code_5];
+        dis[6] = tab_ptr_6[code_6];
+        dis[7] = tab_ptr_7[code_7];
+        dis[8] = tab_ptr_8[code_8];
+        dis[9] = tab_ptr_9[code_9];
+        dis[10] = tab_ptr_10[code_10];
+        dis[11] = tab_ptr_11[code_11];
+        dis[12] = tab_ptr_12[code_12];
+        dis[13] = tab_ptr_13[code_13];
+        dis[14] = tab_ptr_14[code_14];
+        dis[15] = tab_ptr_15[code_15];
+
+        memcpy(codes_this, codes_next, CODE_SIZE); // this buffer: 1 + (N - 1) times
+
+        float sum_dis = 
+            dis[0] + dis[1] + dis[2] + dis[3] +
+            dis[4] + dis[5] + dis[6] + dis[7] +
+            dis[8] + dis[9] + dis[10] + dis[11] +
+            dis[12] + dis[13] + dis[14] + dis[15];
+
+        result[j] = sum_dis;
+    }
+    // last iteration: compute 
+    uint64_t code_0 = (codes_this[0] & 0x0000000F) >> (0 * 8);
+    uint64_t code_1 = (codes_this[0] & 0x000000F0) >> (1 * 8);
+    uint64_t code_2 = (codes_this[0] & 0x00000F00) >> (2 * 8);
+    uint64_t code_3 = (codes_this[0] & 0x0000F000) >> (3 * 8);
+    uint64_t code_4 = (codes_this[0] & 0x000F0000) >> (4 * 8);
+    uint64_t code_5 = (codes_this[0] & 0x00F00000) >> (5 * 8);
+    uint64_t code_6 = (codes_this[0] & 0x0F000000) >> (6 * 8);
+    uint64_t code_7 = (codes_this[0] & 0xF0000000) >> (7 * 8);
+
+    uint64_t code_8 = (codes_this[1] & 0x0000000F) >> (0 * 8);
+    uint64_t code_9 = (codes_this[1] & 0x000000F0) >> (1 * 8);
+    uint64_t code_10 = (codes_this[1] & 0x00000F00) >> (2 * 8);
+    uint64_t code_11 = (codes_this[1] & 0x0000F000) >> (3 * 8);
+    uint64_t code_12 = (codes_this[1] & 0x000F0000) >> (4 * 8);
+    uint64_t code_13 = (codes_this[1] & 0x00F00000) >> (5 * 8);
+    uint64_t code_14 = (codes_this[1] & 0x0F000000) >> (6 * 8);
+    uint64_t code_15 = (codes_this[1] & 0xF0000000) >> (7 * 8);
+
+    dis[0] = tab_ptr_0[code_0];
+    dis[1] = tab_ptr_1[code_1];
+    dis[2] = tab_ptr_2[code_2];
+    dis[3] = tab_ptr_3[code_3];
+    dis[4] = tab_ptr_4[code_4];
+    dis[5] = tab_ptr_5[code_5];
+    dis[6] = tab_ptr_6[code_6];
+    dis[7] = tab_ptr_7[code_7];
+    dis[8] = tab_ptr_8[code_8];
+    dis[9] = tab_ptr_9[code_9];
+    dis[10] = tab_ptr_10[code_10];
+    dis[11] = tab_ptr_11[code_11];
+    dis[12] = tab_ptr_12[code_12];
+    dis[13] = tab_ptr_13[code_13];
+    dis[14] = tab_ptr_14[code_14];
+    dis[15] = tab_ptr_15[code_15];
+
+    float sum_dis = 
+        dis[0] + dis[1] + dis[2] + dis[3] +
+        dis[4] + dis[5] + dis[6] + dis[7] +
+        dis[8] + dis[9] + dis[10] + dis[11] +
+        dis[12] + dis[13] + dis[14] + dis[15];
+
+    result[num_vectors - 1] = sum_dis;
+
+    t_info -> time_per_thread = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+}
+
 void* thread_func_faiss_scan(void* vargp) {
 
     auto tstart = std::chrono::high_resolution_clock::now();
@@ -437,7 +580,7 @@ void* thread_func_faiss_scan(void* vargp) {
 
     for (long j = 0; j < num_vectors; j++) {
         uint8_t* cur_codes = codes;
-        codes += 8;
+        codes += CODE_SIZE;
         float dis = 0; 
         const float* tab_ptr = distance_LUT;
 
@@ -615,6 +758,30 @@ int main(int argc, char *argv[]) {
             << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
             << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
             << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
+
+
+        // thread_func_unroll_scan_shift_prefetch
+        tstart = std::chrono::high_resolution_clock::now();
+        std::cout << "Before Thread\n";
+        for (int i = 0; i < num_threads; i++) {
+            pthread_create(&thread_obj[i], NULL, thread_func_unroll_scan_shift_prefetch, (void*) &t_info[i]); 
+        }
+        for (int i = 0; i < num_threads; i++) {
+            pthread_join(thread_obj[i], NULL); 
+        }
+        std::cout << "After Thread\n"; 
+
+        duration = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+        total_time_per_thread = 0;
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
+        ave_time_per_thread = total_time_per_thread / num_threads;
+        std::cout << "unroll scan (shift + prefetch): size = " << num_vectors_total * CODE_SIZE << 
+            " bytes\ntime (all sync)="  << duration << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
+            << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
+
 
         // thread_func_faiss_scan 
         tstart = std::chrono::high_resolution_clock::now();
