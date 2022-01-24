@@ -10,6 +10,7 @@
 
 #include <sys/time.h>
 #define CODE_SIZE 16
+#define LONG_CODE_SIZE 1024
 
 //#include <boost/multiprecision/cpp_int.hpp>
 //using namespace boost::multiprecision;
@@ -84,8 +85,6 @@ void* thread_func_unroll_scan_read_codes(void* vargp) {
 
 
 void* thread_func_unroll_scan_read_longer_codes(void* vargp) {
-
-#define LONG_CODE_SIZE 1024
 
     auto tstart = std::chrono::high_resolution_clock::now();
 
@@ -192,6 +191,67 @@ void* thread_func_unroll_scan_read_codes_prefetch(void* vargp) {
     tmp_codes[13] = codes_this[13];
     tmp_codes[14] = codes_this[14];
     tmp_codes[15] = codes_this[15];
+
+
+    float sum_dis = 
+        tmp_codes[0] + tmp_codes[1] + tmp_codes[2] + tmp_codes[3] +
+        tmp_codes[4] + tmp_codes[5] + tmp_codes[6] + tmp_codes[7] +
+        tmp_codes[8] + tmp_codes[9] + tmp_codes[10] + tmp_codes[11] +
+        tmp_codes[12] + tmp_codes[13] + tmp_codes[14] + tmp_codes[15];
+
+    for (long j = 0; j < num_vectors; j++) {
+        result[j] = sum_dis;
+    }
+
+
+    t_info -> time_per_thread = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+}
+
+
+void* thread_func_unroll_scan_read_longer_codes_prefetch(void* vargp) {
+    
+
+    auto tstart = std::chrono::high_resolution_clock::now();
+
+    struct Thread_info* t_info = (struct Thread_info*) vargp;
+
+
+    long num_vectors = t_info -> num_vectors;
+    uint8_t* codes = t_info -> codes;
+    float* distance_LUT = t_info -> distance_LUT; // 16 x 256
+    float* result = t_info -> result;
+
+    float dis[CODE_SIZE]; 
+    float* tab_ptr = distance_LUT;
+
+    // copy to
+    uint8_t tmp_codes[LONG_CODE_SIZE];
+
+    // double buffering the codes to maximize bandwidth
+    // this buffer -> read N times
+    // next buffer -> read N - 1 times
+    uint8_t codes_this[LONG_CODE_SIZE];
+    uint8_t codes_next[LONG_CODE_SIZE];
+
+    // first iteration: load this buffer from memory
+    memcpy(codes_this, codes, LONG_CODE_SIZE);
+    codes += LONG_CODE_SIZE; 
+    // middle iterations: charge next buffer + compute + load this buffer from next buffer 
+    for (long j = 1; j < num_vectors / (LONG_CODE_SIZE / CODE_SIZE) -  1; j++) {
+        memcpy(codes_next, codes, LONG_CODE_SIZE); // next buffer: N - 1 times
+        codes += LONG_CODE_SIZE;
+  
+        for (int k = 0; k < LONG_CODE_SIZE; k++) {
+            tmp_codes[k] = codes_this[k];
+        }
+
+        memcpy(codes_this, codes_next, LONG_CODE_SIZE); // this buffer: 1 + (N - 1) times
+    }
+    // last iteration: compute
+    for (int k = 0; k < LONG_CODE_SIZE; k++) {
+        tmp_codes[k] = codes_this[k];
+    }
 
 
     float sum_dis = 
