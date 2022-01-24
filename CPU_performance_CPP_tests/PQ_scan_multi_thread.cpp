@@ -525,6 +525,117 @@ void* thread_func_unroll_scan_prefetch(void* vargp) {
 }
 
 
+void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
+    
+    auto tstart = std::chrono::high_resolution_clock::now();
+
+    struct Thread_info* t_info = (struct Thread_info*) vargp;
+
+
+    long num_vectors = t_info -> num_vectors;
+    uint8_t* codes = t_info -> codes;
+    float* distance_LUT = t_info -> distance_LUT; // 16 x 256
+    float* result = t_info -> result;
+
+
+    float dis[CODE_SIZE]; 
+    float* tab_ptr = distance_LUT;
+
+    float* tab_ptr_0 = distance_LUT + 0 * 256;
+    float* tab_ptr_1 = distance_LUT + 1 * 256;
+    float* tab_ptr_2 = distance_LUT + 2 * 256;
+    float* tab_ptr_3 = distance_LUT + 3 * 256;
+    float* tab_ptr_4 = distance_LUT + 4 * 256;
+    float* tab_ptr_5 = distance_LUT + 5 * 256;
+    float* tab_ptr_6 = distance_LUT + 6 * 256;
+    float* tab_ptr_7 = distance_LUT + 7 * 256;
+    float* tab_ptr_8 = distance_LUT + 8 * 256;
+    float* tab_ptr_9 = distance_LUT + 9 * 256;
+    float* tab_ptr_10 = distance_LUT + 10 * 256;
+    float* tab_ptr_11 = distance_LUT + 11 * 256;
+    float* tab_ptr_12 = distance_LUT + 12 * 256;
+    float* tab_ptr_13 = distance_LUT + 13 * 256;
+    float* tab_ptr_14 = distance_LUT + 14 * 256;
+    float* tab_ptr_15 = distance_LUT + 15 * 256;
+
+
+    // double buffering the codes to maximize bandwidth
+    // this buffer -> read N times
+    // next buffer -> read N - 1 times
+    uint8_t codes_this[LONG_CODE_SIZE];
+    uint8_t codes_next[LONG_CODE_SIZE];
+
+    // first iteration: load this buffer from memory
+    memcpy(codes_this, codes, LONG_CODE_SIZE);
+    codes += LONG_CODE_SIZE; 
+    // middle iterations: charge next buffer + compute + load this buffer from next buffer 
+    for (long j = 0; j < (num_vectors - 1) / LONG_CODE_SIZE; j++) {
+        memcpy(codes_next, codes, LONG_CODE_SIZE); // next buffer: N - 1 times
+        codes += LONG_CODE_SIZE;
+
+        for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
+            dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
+            dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
+            dis[2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
+            dis[3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
+            dis[4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
+            dis[5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
+            dis[6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
+            dis[7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
+            dis[8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
+            dis[9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
+            dis[10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
+            dis[11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
+            dis[12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
+            dis[13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
+            dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
+            dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
+
+            float sum_dis = 
+                dis[0] + dis[1] + dis[2] + dis[3] +
+                dis[4] + dis[5] + dis[6] + dis[7] +
+                dis[8] + dis[9] + dis[10] + dis[11] +
+                dis[12] + dis[13] + dis[14] + dis[15];
+
+            result[j * LONG_CODE_SIZE + k] = sum_dis;
+        }
+
+        memcpy(codes_this, codes_next, CODE_SIZE); // this buffer: 1 + (N - 1) times
+    }
+    // last iteration: compute 
+    for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
+        dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
+        dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
+        dis[2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
+        dis[3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
+        dis[4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
+        dis[5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
+        dis[6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
+        dis[7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
+        dis[8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
+        dis[9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
+        dis[10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
+        dis[11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
+        dis[12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
+        dis[13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
+        dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
+        dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
+
+        float sum_dis = 
+            dis[0] + dis[1] + dis[2] + dis[3] +
+            dis[4] + dis[5] + dis[6] + dis[7] +
+            dis[8] + dis[9] + dis[10] + dis[11] +
+            dis[12] + dis[13] + dis[14] + dis[15];
+
+        result[((num_vectors - 1) / LONG_CODE_SIZE - 1) * LONG_CODE_SIZE + k] = sum_dis;
+    }
+
+    t_info -> time_per_thread = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+}
+
+
+
 void* thread_func_unroll_scan_shift_prefetch(void* vargp) {
     
     auto tstart = std::chrono::high_resolution_clock::now();
@@ -909,6 +1020,29 @@ int main(int argc, char *argv[]) {
             << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
             << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
 
+
+        // thread_func_unroll_scan_longer_codes_prefetch
+        tstart = std::chrono::high_resolution_clock::now();
+        std::cout << "Before Thread\n";
+        for (int i = 0; i < num_threads; i++) {
+            pthread_create(&thread_obj[i], NULL, thread_func_unroll_scan_longer_codes_prefetch, (void*) &t_info[i]); 
+        }
+        for (int i = 0; i < num_threads; i++) {
+            pthread_join(thread_obj[i], NULL); 
+        }
+        std::cout << "After Thread\n"; 
+
+        duration = std::chrono::duration_cast<milli>(
+             std::chrono::high_resolution_clock::now() - tstart).count() / 1000.0;
+        total_time_per_thread = 0;
+        for (int i = 0; i < num_threads; i++) total_time_per_thread += t_info[i].time_per_thread;
+        ave_time_per_thread = total_time_per_thread / num_threads;
+        std::cout << "unroll scan longer (prefetch): size = " << num_vectors_total * CODE_SIZE << 
+            "longer code size = " << LONG_CODE_SIZE << " bytes (instead of 16)" <<
+            " bytes\ntime (all sync)="  << duration << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / duration / 1e9 << "GB/s\n"
+            << "time (thread average)="  << ave_time_per_thread << " seconds\n" 
+            << "throughput: " << num_vectors_total * CODE_SIZE / ave_time_per_thread / 1e9 << "GB/s\n";
 
         // thread_func_unroll_scan_shift_prefetch
         tstart = std::chrono::high_resolution_clock::now();
