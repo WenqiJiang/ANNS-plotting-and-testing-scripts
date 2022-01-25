@@ -1,4 +1,6 @@
 PQ_scan_multi_thread
 .DS_Store
+*.s
+*.out
 ../.DS_Store
 
