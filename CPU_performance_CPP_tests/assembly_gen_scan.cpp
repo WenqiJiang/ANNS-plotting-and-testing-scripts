@@ -88,18 +88,19 @@ int main() {
     long num_vectors = 100 * 1000 * 1000; 
     uint8_t* codes = new uint8_t[num_vectors * CODE_SIZE]; 
     float* distance_LUT = new float[256 * CODE_SIZE];
-    float* result = new float[num_vectors];
+    float* result_0 = new float[num_vectors];
+    float* result_1 = new float[num_vectors];
 
     scan_list_with_table(
         num_vectors,
         codes,
         distance_LUT, 
-        result);
+        result_0);
     scan_list_with_table_unrolled(
         num_vectors,
         codes,
         distance_LUT, 
-        result);
+        result_1);
 
     return 0;
 }
