@@ -643,7 +643,7 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
             dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
             dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
-            float sum_dis[k] = 
+            sum_dis[k] = 
                 dis[0] + dis[1] + dis[2] + dis[3] +
                 dis[4] + dis[5] + dis[6] + dis[7] +
                 dis[8] + dis[9] + dis[10] + dis[11] +
@@ -674,7 +674,7 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
         dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
         dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
-        float sum_dis[k] = 
+        sum_dis[k] = 
             dis[0] + dis[1] + dis[2] + dis[3] +
             dis[4] + dis[5] + dis[6] + dis[7] +
             dis[8] + dis[9] + dis[10] + dis[11] +
