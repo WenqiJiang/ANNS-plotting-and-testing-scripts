@@ -11,6 +11,15 @@
 
 using milli = std::chrono::milliseconds;
 
+long num_vectors = 10 * 1000 * 1000; 
+
+#define RUN_FUNC(FNAME)                                                     \
+        t0 = std::chrono::high_resolution_clock::now();                     \
+        FNAME(codes_cp_from, codes_cp_to);                                  \
+        duration = std::chrono::duration_cast<milli>(                       \
+             std::chrono::high_resolution_clock::now() - t0).count() / 1000.0; \
+        print_throughput(duration, total_size);
+
 void print_throughput(
     double duration, // seconds
     long total_size) { // bytes
@@ -19,12 +28,23 @@ void print_throughput(
     std::cout << "Throughput" << total_size / duration / 1e9 << " GB/s\n";
 }
 
+void cp_vanilla(DTYPE* codes_cp_from, DTYPE* codes_cp_to) {
+
+        for (int j = 0; j < num_vectors; j++) {
+#pragma unroll(16)
+            for (int k = 0; k < CODE_SIZE; k++) {
+                codes_cp_to[j * CODE_SIZE + k] = codes_cp_from[j * CODE_SIZE + k];
+            }
+        }
+}
+
 int main() {
   
-    size_t num_vectors = 100 * 1000 * 1000; 
     DTYPE* codes_cp_from = new DTYPE[num_vectors * CODE_SIZE]; 
     DTYPE* codes_cp_to = new DTYPE[num_vectors * CODE_SIZE]; 
     long total_size = num_vectors * CODE_SIZE * sizeof(DTYPE);
+    memset(codes_cp_from, 0, total_size);
+    memset(codes_cp_to, 0, total_size);
 
     std::cout << "Scanning " << num_vectors << " PQ codes\n"
       << "length per code = " << CODE_SIZE << "\nbytes per code = " << sizeof(DTYPE) << "\n"
@@ -41,16 +61,12 @@ int main() {
 
         // cp from src to destimation
         std::cout << "\ncp from src to destimation: \n";
-        t0 = std::chrono::high_resolution_clock::now();
-        for (int j = 0; j < num_vectors; j++) {
-#pragma unroll(16)
-            for (int k = 0; k < CODE_SIZE; k++) {
-                codes_cp_to[j * CODE_SIZE + k] = codes_cp_from[j * CODE_SIZE + k];
-            }
-        }
-        duration = std::chrono::duration_cast<milli>(
-             std::chrono::high_resolution_clock::now() - t0).count() / 1000.0;
-        print_throughput(duration, total_size);
+        // t0 = std::chrono::high_resolution_clock::now();
+        // cp_vanilla(codes_cp_from, codes_cp_to);
+        // duration = std::chrono::duration_cast<milli>(
+        //      std::chrono::high_resolution_clock::now() - t0).count() / 1000.0;
+        // print_throughput(duration, total_size);
+        RUN_FUNC(cp_vanilla)
 
         // cp from src to destimation (manual unroll 16 times)
         std::cout << "\ncp from src to destimation (manual unroll 16 times): \n";

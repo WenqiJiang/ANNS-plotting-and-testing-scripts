@@ -619,10 +619,12 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
     memcpy(codes_this, codes, LONG_CODE_SIZE);
     codes += LONG_CODE_SIZE; 
     // middle iterations: charge next buffer + compute + load this buffer from next buffer 
+    float sum_dis[LONG_CODE_SIZE / CODE_SIZE];
     for (long j = 0; j < num_vectors / (LONG_CODE_SIZE/CODE_SIZE) - 1; j++) {
         memcpy(codes_next, codes, LONG_CODE_SIZE); // next buffer: N - 1 times
         codes += LONG_CODE_SIZE;
 
+#pragma UNROLL
         for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
             dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
             dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
@@ -641,18 +643,19 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
             dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
             dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
-            float sum_dis = 
+            float sum_dis[k] = 
                 dis[0] + dis[1] + dis[2] + dis[3] +
                 dis[4] + dis[5] + dis[6] + dis[7] +
                 dis[8] + dis[9] + dis[10] + dis[11] +
                 dis[12] + dis[13] + dis[14] + dis[15];
 
-            result[j * (LONG_CODE_SIZE / CODE_SIZE) + k] = sum_dis;
+            result[j * (LONG_CODE_SIZE / CODE_SIZE) + k] = sum_dis[k];
         }
 
         memcpy(codes_this, codes_next, LONG_CODE_SIZE); // this buffer: 1 + (N - 1) times
     }
     // last iteration: compute 
+#pragma UNROLL
     for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
         dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
         dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
@@ -671,13 +674,13 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
         dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
         dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
-        float sum_dis = 
+        float sum_dis[k] = 
             dis[0] + dis[1] + dis[2] + dis[3] +
             dis[4] + dis[5] + dis[6] + dis[7] +
             dis[8] + dis[9] + dis[10] + dis[11] +
             dis[12] + dis[13] + dis[14] + dis[15];
 
-        result[(num_vectors / (LONG_CODE_SIZE/CODE_SIZE) - 1) * (LONG_CODE_SIZE/CODE_SIZE) + k] = sum_dis;
+        result[(num_vectors / (LONG_CODE_SIZE/CODE_SIZE) - 1) * (LONG_CODE_SIZE/CODE_SIZE) + k] = sum_dis[k];
     }
 
     t_info -> time_per_thread = std::chrono::duration_cast<milli>(
