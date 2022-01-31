@@ -588,7 +588,7 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
     float* result = t_info -> result;
 
 
-    float dis[CODE_SIZE]; 
+    float dis[LONG_CODE_SIZE]; 
     float* tab_ptr = distance_LUT;
 
     float* tab_ptr_0 = distance_LUT + 0 * 256;
@@ -626,28 +626,28 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
 
 #pragma UNROLL
         for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
-            dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
-            dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
-            dis[2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
-            dis[3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
-            dis[4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
-            dis[5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
-            dis[6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
-            dis[7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
-            dis[8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
-            dis[9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
-            dis[10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
-            dis[11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
-            dis[12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
-            dis[13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
-            dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
-            dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
+            dis[k * CODE_SIZE + 0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
+            dis[k * CODE_SIZE + 1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
+            dis[k * CODE_SIZE + 2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
+            dis[k * CODE_SIZE + 3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
+            dis[k * CODE_SIZE + 4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
+            dis[k * CODE_SIZE + 5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
+            dis[k * CODE_SIZE + 6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
+            dis[k * CODE_SIZE + 7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
+            dis[k * CODE_SIZE + 8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
+            dis[k * CODE_SIZE + 9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
+            dis[k * CODE_SIZE + 10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
+            dis[k * CODE_SIZE + 11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
+            dis[k * CODE_SIZE + 12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
+            dis[k * CODE_SIZE + 13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
+            dis[k * CODE_SIZE + 14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
+            dis[k * CODE_SIZE + 15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
             sum_dis[k] = 
-                dis[0] + dis[1] + dis[2] + dis[3] +
-                dis[4] + dis[5] + dis[6] + dis[7] +
-                dis[8] + dis[9] + dis[10] + dis[11] +
-                dis[12] + dis[13] + dis[14] + dis[15];
+                dis[k * CODE_SIZE + 0] + dis[k * CODE_SIZE + 1] + dis[k * CODE_SIZE + 2] + dis[k * CODE_SIZE + 3] +
+                dis[k * CODE_SIZE + 4] + dis[k * CODE_SIZE + 5] + dis[k * CODE_SIZE + 6] + dis[k * CODE_SIZE + 7] +
+                dis[k * CODE_SIZE + 8] + dis[k * CODE_SIZE + 9] + dis[k * CODE_SIZE + 10] + dis[k * CODE_SIZE + 11] +
+                dis[k * CODE_SIZE + 12] + dis[k * CODE_SIZE + 13] + dis[k * CODE_SIZE + 14] + dis[k * CODE_SIZE + 15];
 
             result[j * (LONG_CODE_SIZE / CODE_SIZE) + k] = sum_dis[k];
         }
@@ -657,28 +657,28 @@ void* thread_func_unroll_scan_longer_codes_prefetch(void* vargp) {
     // last iteration: compute 
 #pragma UNROLL
     for (int k = 0; k < LONG_CODE_SIZE / CODE_SIZE; k++) {
-        dis[0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
-        dis[1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
-        dis[2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
-        dis[3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
-        dis[4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
-        dis[5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
-        dis[6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
-        dis[7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
-        dis[8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
-        dis[9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
-        dis[10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
-        dis[11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
-        dis[12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
-        dis[13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
-        dis[14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
-        dis[15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
+        dis[k * CODE_SIZE + 0] = tab_ptr_0[codes_this[k * CODE_SIZE + 0]];
+        dis[k * CODE_SIZE + 1] = tab_ptr_1[codes_this[k * CODE_SIZE + 1]];
+        dis[k * CODE_SIZE + 2] = tab_ptr_2[codes_this[k * CODE_SIZE + 2]];
+        dis[k * CODE_SIZE + 3] = tab_ptr_3[codes_this[k * CODE_SIZE + 3]];
+        dis[k * CODE_SIZE + 4] = tab_ptr_4[codes_this[k * CODE_SIZE + 4]];
+        dis[k * CODE_SIZE + 5] = tab_ptr_5[codes_this[k * CODE_SIZE + 5]];
+        dis[k * CODE_SIZE + 6] = tab_ptr_6[codes_this[k * CODE_SIZE + 6]];
+        dis[k * CODE_SIZE + 7] = tab_ptr_7[codes_this[k * CODE_SIZE + 7]];
+        dis[k * CODE_SIZE + 8] = tab_ptr_8[codes_this[k * CODE_SIZE + 8]];
+        dis[k * CODE_SIZE + 9] = tab_ptr_9[codes_this[k * CODE_SIZE + 9]];
+        dis[k * CODE_SIZE + 10] = tab_ptr_10[codes_this[k * CODE_SIZE + 10]];
+        dis[k * CODE_SIZE + 11] = tab_ptr_11[codes_this[k * CODE_SIZE + 11]];
+        dis[k * CODE_SIZE + 12] = tab_ptr_12[codes_this[k * CODE_SIZE + 12]];
+        dis[k * CODE_SIZE + 13] = tab_ptr_13[codes_this[k * CODE_SIZE + 13]];
+        dis[k * CODE_SIZE + 14] = tab_ptr_14[codes_this[k * CODE_SIZE + 14]];
+        dis[k * CODE_SIZE + 15] = tab_ptr_15[codes_this[k * CODE_SIZE + 15]];
 
         sum_dis[k] = 
-            dis[0] + dis[1] + dis[2] + dis[3] +
-            dis[4] + dis[5] + dis[6] + dis[7] +
-            dis[8] + dis[9] + dis[10] + dis[11] +
-            dis[12] + dis[13] + dis[14] + dis[15];
+            dis[k * CODE_SIZE + 0] + dis[k * CODE_SIZE + 1] + dis[k * CODE_SIZE + 2] + dis[k * CODE_SIZE + 3] +
+            dis[k * CODE_SIZE + 4] + dis[k * CODE_SIZE + 5] + dis[k * CODE_SIZE + 6] + dis[k * CODE_SIZE + 7] +
+            dis[k * CODE_SIZE + 8] + dis[k * CODE_SIZE + 9] + dis[k * CODE_SIZE + 10] + dis[k * CODE_SIZE + 11] +
+            dis[k * CODE_SIZE + 12] + dis[k * CODE_SIZE + 13] + dis[k * CODE_SIZE + 14] + dis[k * CODE_SIZE + 15];
 
         result[(num_vectors / (LONG_CODE_SIZE/CODE_SIZE) - 1) * (LONG_CODE_SIZE/CODE_SIZE) + k] = sum_dis[k];
     }
