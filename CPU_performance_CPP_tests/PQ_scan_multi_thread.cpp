@@ -1,4 +1,4 @@
-// g++ PQ_scan_multi_thread.cpp -o PQ_scan_multi_thread -std=c++14 -pthread
+// g++ PQ_scan_multi_thread.cpp -o PQ_scan_multi_thread -std=c++14 -pthread -O3
 // ./PQ_scan_multi_thread <thread_num>
 
 #include <iostream>
@@ -10,8 +10,9 @@
 
 #include <sys/time.h>
 #define CODE_SIZE 16
-#define LONG_CODE_SIZE 1024
+#define LONG_CODE_SIZE (8 * 1024)
 
+long num_vectors_total = (long) 1 * 100 * 1000 * 1000; 
 //#include <boost/multiprecision/cpp_int.hpp>
 //using namespace boost::multiprecision;
 
@@ -156,9 +157,17 @@ void* thread_func_unroll_scan_read_longer_codes(void* vargp) {
         memcpy(codes_burst, codes, LONG_CODE_SIZE); // this buffer: 1 + (N - 1) times
         codes += LONG_CODE_SIZE;
   
+/*
 #pragma UNROLL
         for (int k = 0; k < LONG_CODE_SIZE; k++) {
             tmp_codes[k] = codes_burst[k];
+        }
+*/
+    for (int k = 0; k < LONG_CODE_SIZE / 4; k++) {
+            tmp_codes[k * 4 + 0] = codes_burst[k * 4 + 0];
+            tmp_codes[k * 4 + 1] = codes_burst[k * 4 + 1];
+            tmp_codes[k * 4 + 2] = codes_burst[k * 4 + 2];
+            tmp_codes[k * 4 + 3] = codes_burst[k * 4 + 3];
         }
     }
     float sum_dis = 
@@ -857,7 +866,6 @@ int main(int argc, char *argv[]) {
     }
     int num_threads = std::stoi(argv[1]);
 
-    long num_vectors_total = (long) 1 * 100 * 1000 * 1000; 
     // long num_vectors_total = (long) 1 * 1000 * 1000 * 1000; 
     long num_vectors_per_thread = num_vectors_total / num_threads; 
 
